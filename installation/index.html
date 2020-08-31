@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <meta name="author" content="Benda-Lab">
+  
+  <link rel="shortcut icon" href="../img/favicon.ico">
+  <title>Installation - audioio</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
+
+  <link rel="stylesheet" href="../css/theme.css" />
+  <link rel="stylesheet" href="../css/theme_extra.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" />
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Installation";
+    var mkdocs_page_input_path = "installation.md";
+    var mkdocs_page_url = null;
+  </script>
+  
+  <script src="../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+        <a href=".." class="icon icon-home"> audioio</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                    </li>
+                </ul>
+                <ul class="current">
+                    <li class="toctree-l1 current"><a class="reference internal current" href="./">Installation</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#linux">Linux</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#windows">Windows</a>
+    </li>
+    </ul>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="" href="../api/index.html">API reference</a>
+                    </li>
+                </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="..">audioio</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="..">Docs</a> &raquo;</li>
+    
+      
+    
+    <li>Installation</li>
+    <li class="wy-breadcrumbs-aside">
+      
+    </li>
+  </ul>
+  
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="installation">Installation</h1>
+<p>AudioIO uses whatever audio module is installed on your
+system. However, the python standard library support for reading and
+writing audio files and for playing sound is rather poor. You certainly want
+to install additional packages for better performance.</p>
+<p>Run in your terminal</p>
+<pre><code class="sh">&gt; audiomodules
+</code></pre>
+
+<p>to see which audio modules you have already installed on your system,
+which ones are recommended to install, and how to install them. By
+calling the script with the name of an audio module as an argument you
+get platform specific installation instructions for this module. E.g.</p>
+<pre><code class="sh">&gt; audiomodules audioread
+</code></pre>
+
+<h2 id="linux">Linux</h2>
+<p>For file I/O you might want to install the
+<a href="http://www.mega-nerd.com/libsndfile/">sndfile library</a>
+for accessing a wide range of audio file formats.</p>
+<p>On debian based systems:</p>
+<pre><code class="sh">sudo apt-get install libsndfile1 libsndfile1-dev libffi-dev
+</code></pre>
+
+<p>on rpm based systems:</p>
+<pre><code class="sh">dnf install libsndfile libsndfile-devel libffi-devel
+</code></pre>
+
+<p>Then you can install one of the many python wrappers for the sndfile
+library, e.g. <a href="http://pysoundfile.readthedocs.org">SoundFile</a> or <a href="https://github.com/vokimon/python-wavefile">wavefile</a>:</p>
+<pre><code class="sh">sudo pip install SoundFile
+sudo pip install wavefile
+</code></pre>
+
+<p>MP3 and similar formats are supported by the 
+<a href="https://github.com/beetbox/audioread">audioread</a> module.
+Install ffmpeg and friends with</p>
+<pre><code>sudo apt-get install libav-tools python3-audioread
+</code></pre>
+
+<p>on debian based systems and with</p>
+<pre><code>dnf install ffmpeg ffmpeg-devel python3-audioread
+</code></pre>
+
+<p>on rpm based systems.</p>
+<p>For playing sounds, the <a href="http://www.portaudio.com">portaudio library</a>
+is the gold standard. Install this library with</p>
+<pre><code class="sh">sudo apt-get install libportaudio2 portaudio19-dev
+</code></pre>
+
+<p>on debian based systems or with</p>
+<pre><code class="sh">dnf install libportaudio portaudio-devel
+</code></pre>
+
+<p>on rpm based systems.</p>
+<p>Then you need to install the python packages <a href="https://python-sounddevice.readthedocs.io">sounddevice</a> or <a href="https://people.csail.mit.edu/hubert/pyaudio">PyAudio</a>:</p>
+<pre><code>sudo pip install sounddevice
+sudo pip install PyAudio
+</code></pre>
+
+<h2 id="windows">Windows</h2>
+<p>For file I/O based on the the <a href="http://www.mega-nerd.com/libsndfile/">sndfile library</a>
+install the <a href="http://pysoundfile.readthedocs.org">SoundFile</a> module:</p>
+<pre><code class="sh">pip install SoundFile
+</code></pre>
+
+<p>For playing sounds install <a href="https://simpleaudio.readthedocs.io">simpleaudio</a>:</p>
+<pre><code class="sh">pip install simpleaudio
+</code></pre>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href=".." class="btn btn-neutral" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="versions">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+          <a href="https://github.com/bendalab/audioio/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
+      
+      
+        <span><a href=".." style="color: #fcfcfc;">&laquo; Previous</a></span>
+      
+      
+    </span>
+</div>
+    <script>var base_url = '..';</script>
+    <script src="../js/theme.js" defer></script>
+      <script src="../search/main.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>
