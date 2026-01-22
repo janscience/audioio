@@ -592,19 +592,20 @@ def read_bext_chunk(sf, store_empty=True):
     md = {}
     size = struct.unpack('<I', sf.read(4))[0]
     size += size % 2
-    s = sf.read(256).decode('ascii').strip(' \x00')
+    print('read BEXT')
+    s = sf.read(256).decode('latin').strip(' \x00')
     if s or store_empty:
-        md['Description'] = s
-    s = sf.read(32).decode('ascii').strip(' \x00')
+        md['Description'] = s.strip()
+    s = sf.read(32).decode('latin').strip(' \x00')
     if s or store_empty:
         md['Originator'] = s
-    s = sf.read(32).decode('ascii').strip(' \x00')
+    s = sf.read(32).decode('latin').strip(' \x00')
     if s or store_empty:
         md['OriginatorReference'] = s
-    s = sf.read(10).decode('ascii').strip(' \x00')
+    s = sf.read(10).decode('latin').strip(' \x00')
     if s or store_empty:
         md['OriginationDate'] = s
-    s = sf.read(8).decode('ascii').strip(' \x00')
+    s = sf.read(8).decode('latin').strip(' \x00')
     if s or store_empty:
         md['OriginationTime'] = s
     reference, version = struct.unpack('<QH', sf.read(10))
@@ -612,7 +613,7 @@ def read_bext_chunk(sf, store_empty=True):
         md['TimeReference'] = reference
     if version > 0 or store_empty:
         md['Version'] = version
-    s = sf.read(64).decode('ascii').strip(' \x00')
+    s = sf.read(64).decode('latin').strip(' \x00')
     if s or store_empty:
         md['UMID'] = s
     lvalue, lrange, peak, momentary, shortterm = struct.unpack('<hhhhh', sf.read(10))
@@ -626,11 +627,11 @@ def read_bext_chunk(sf, store_empty=True):
         md['MaxMomentaryLoudness'] = momentary
     if shortterm > 0 or store_empty:
         md['MaxShortTermLoudness'] = shortterm
-    s = sf.read(180).decode('ascii').strip(' \x00')
+    s = sf.read(180).decode('latin').strip(' \x00')
     if s or store_empty:
         md['Reserved'] = s
     size -= 256 + 32 + 32 + 10 + 8 + 8 + 2 + 64 + 10 + 180
-    s = sf.read(size).decode('ascii').strip(' \x00\n\r')
+    s = sf.read(size).decode('latin').strip(' \x00\n\r')
     if s or store_empty:
         md['CodingHistory'] = s
     return md
@@ -872,7 +873,7 @@ def read_lbl_chunk(sf, rate):
     labels = np.zeros((nn, 2), dtype=object)
     n = 0
     for c in range(nn):
-        line = sf.read(65).decode('ascii')
+        line = sf.read(65).decode('latin')
         fields = line.split('\t')
         if len(fields) >= 4:
             labels[n,0] = fields[3].strip()
@@ -1284,7 +1285,7 @@ def write_bext_chunk(df, metadata):
     n = 0
     for k in bext_tags:
         n += bext_tags[k]
-    ch = metadata.get('CodingHistory', '').encode('ascii', errors='replace')
+    ch = metadata.get('CodingHistory', '').encode('latin', errors='replace')
     if len(ch) >= 2 and ch[-2:] != '\r\n':
         ch += b'\r\n'
     nch = len(ch) + len(ch) % 2
@@ -1303,7 +1304,7 @@ def write_bext_chunk(df, metadata):
             df.write(ch)
             df.write(bytes(nch - len(ch)))
         else:
-            v = metadata.get(k, '').encode('ascii', errors='replace')
+            v = metadata.get(k, '').encode('latin', errors='replace')
             df.write(v[:bn] + bytes(bn - len(v)))
     return 8 + n, ['BEXT']
 
@@ -1636,7 +1637,7 @@ def write_lbl_chunk(df, locs, labels, rate):
                 ts = ''
         df.write(struct.pack('<14sc', f'{t0:e}'.encode('ascii', errors='replace'), b'\t'))
         df.write(struct.pack('<14sc', f'{t1:e}'.encode('ascii', errors='replace'), b'\t'))
-        bs = f'{ts:31s}\t{ls}\r\n'.encode('ascii', errors='replace')
+        bs = f'{ts:31s}\t{ls}\r\n'.encode('latin', errors='replace')
         df.write(bs)
     return 8 + size
 
