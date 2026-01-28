@@ -592,7 +592,6 @@ def read_bext_chunk(sf, store_empty=True):
     md = {}
     size = struct.unpack('<I', sf.read(4))[0]
     size += size % 2
-    print('read BEXT')
     s = sf.read(256).decode('latin').strip(' \x00')
     if s or store_empty:
         md['Description'] = s.strip()
