@@ -23,8 +23,6 @@ def test_main():
     filename = 'test.wav'
     filename1 = 'test1.wav'
     destfile = 'test2'
-    destpath = 'test3'
-    os.mkdir(destpath)
     write_audio_file(filename)
     with pytest.raises(SystemExit):
         ac.main('-h')
@@ -81,9 +79,10 @@ def test_main():
     write_audio_file(filename1)
     with pytest.raises(SystemExit):
         ac.main('-n', '1', '-o', destfile, filename, filename1)
-    ac.main('-n', '1', '-f', 'wav', '-o', destfile, filename, filename1)
-    shutil.rmtree(destfile)
-    ac.main('-vv', '-o', destfile + '.wav', filename, filename1)
+    with pytest.raises(SystemExit):
+        ac.main('-n', '1', '-f', 'wav', '-o', destfile, filename, filename1)
+    ac.main('-n', '1', '-f', 'wav', '-i', 'mode:relaxed', '-o', destfile, filename, filename1)
+    ac.main('-vv', '-i', 'mode:relaxed', '-o', destfile + '.wav', filename, filename1)
     xdata, xrate = al.load_audio(filename)
     n = len(xdata)
     xdata, xrate = al.load_audio(filename1)
@@ -105,4 +104,3 @@ def test_main():
     os.remove(filename)
     os.remove(filename1)
     os.remove(destfile+'.wav')
-    shutil.rmtree(destpath)
