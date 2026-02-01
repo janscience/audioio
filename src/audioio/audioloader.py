@@ -1407,7 +1407,8 @@ class AudioLoader(BufferedArray):
 
     # open multiple audio files as one:
     def open_multiple(self, filepaths, buffersize=10.0, backsize=0.0,
-                      verbose=0, rate=None, channels=None, end_indices=None):
+                      verbose=0, mode='strict', rate=None, channels=None,
+                      end_indices=None):
         """Open multiple audio files as a single concatenated array.
 
         Parameters
@@ -1420,6 +1421,9 @@ class AudioLoader(BufferedArray):
             Part of the buffer to be loaded before the requested start index in seconds.
         verbose: int
             If larger than zero show detailed error/warning messages.
+        mode: 'relaxed' or 'strict'
+            If 'strict', only concatenate files if they contain
+            a start time in their meta data.
         rate: float
             If provided, do a minimal initialization (no checking)
             using the provided sampling rate (in Hertz), channels,
@@ -1507,6 +1511,8 @@ class AudioLoader(BufferedArray):
                                          f'{self.rate} in {self.filepath}'
                     # check start time of recording:
                     stime = get_datetime(md)
+                    if mode == 'strict' and (start_time is None or stime is None):
+                        error_str = 'file does not contain a start time in its meta data'
                     if start_time is not None and stime is not None and \
                        abs(start_time - stime) > timedelta(seconds=self._max_time_diff):
                         error_str = f'start time does not indicate continuous recording: ' \
