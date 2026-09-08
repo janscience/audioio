@@ -1838,6 +1838,8 @@ class AudioLoader(BufferedArray):
         self.file_indices = []
         self.start_indices = []
         self.end_indices = []
+        self.ampl_min = -1.0
+        self.ampl_max = +1.0
         del self.audio_files
         del self.open_files
         del self.open_loaders
