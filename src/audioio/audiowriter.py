@@ -628,6 +628,135 @@ def write_wavefile(filepath, data, rate, metadata=None, locs=None,
         pass
 
 
+def formats_wavpack():
+    """Audio file formats supported by the wavpack module.
+
+    Returns
+    -------
+    formats: list of str
+        List of supported file formats as strings.
+    """
+    if not audio_modules['wavpack']:
+        return []
+    else:
+        return ['WV']
+
+
+def encodings_wavpack(format):
+    """Encodings of an audio file format supported by the wavpack module.
+
+    Parameters
+    ----------
+    format: str
+        The file format.
+
+    Returns
+    -------
+    encodings: list of str
+        List of supported encodings as strings.
+    """
+    if not audio_modules['wavpack']:
+        return []
+    elif format.upper() != 'WV':
+        return []
+    else:
+        return ['PCM_32']
+
+    
+def _wavpack_write_block(file_id, data_ptr, byte_count):
+    # TODO: use file handle instead of id
+    # TODO: first argument is actually a pointer!
+    if not file_id or not data_ptr or byte_count <= 0:
+        return 0
+    try:
+        raw_bytes = ctypes.string_at(data_ptr, byte_count)
+        os.write(file_id, raw_bytes)
+        return 1
+    except Exception:
+        return 0
+
+
+def write_wavpack(filepath, data, rate, metadata=None, locs=None,
+                  labels=None, format=None, encoding=None,
+                  marker_hint='cue'):
+    """Write audio data using the wavpack module.
+    
+    Documentation
+    -------------
+    https://www.wavpack.com
+
+    Parameters
+    ----------
+    filepath: str or Path
+        Full path and name of the file to write.
+    data: 1-D or 2-D array of floats
+        Array with the data (first index time, second index channel,
+        values within -1.0 and 1.0).
+    rate: float
+        Sampling rate of the data in Hertz.
+    metadata: None or nested dict
+        Metadata as key-value pairs. Values can be strings, integers,
+        or dictionaries.
+    locs: None or 1-D or 2-D array of ints
+        Marker positions (first column) and spans (optional second column)
+        for each marker (rows).
+    labels: None or 2-D array of string objects
+        Labels (first column) and texts (optional second column)
+        for each marker (rows).
+    format: str or None
+        File format, only 'WAV' is supported.
+    encoding: str or None
+        Encoding of the data: 'PCM_32', 'PCM_16', or 'PCM_U8'.
+        If None or empty string use 'PCM_16'.
+    marker_hint: str
+        - 'cue': store markers in cue and and adtl chunks.
+        - 'lbl': store markers in avisoft lbl chunk.
+
+    Raises
+    ------
+    ImportError
+        The wavpack library is not installed.
+    *
+        Writing of the data failed.
+    ValueError
+        File format or encoding not supported.
+    """
+    if not audio_modules['wavpack']:
+        raise ImportError
+    if not format:
+        format = format_from_extension(filepath)
+    if format and format.upper() != 'WV':
+        raise ValueError(f'file format {format} not supported by wavpack module')
+    if not encoding:
+        encoding = 'PCM_32'
+    encoding = encoding.upper()
+    if encoding != 'PCM_32':
+        raise ValueError(f'file encoding {encoding} not supported by wave module')
+    fd = os.open(filepath, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_BINARY if hasattr(os, 'O_BINARY') else os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
+    c_write_callback = WavpackBlockOutput(_wavpack_write_block)
+    wpc = wavpack.WavpackOpenFileOutput(c_write_callback, ctypes.c_void_p(fd), None)
+    if not wpc:
+        raise IOError(f'failed to open "{filepath}" for writing wavpack file')
+    config = WavpackConfig(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    config.bits_per_sample = 16
+    config.bytes_per_sample = 2
+    config.num_channels = data.shape[1]
+    config.sample_rate = int(rate)
+    if not libwv.WavpackSetConfiguration64(wpc, ctypes.byref(config),
+                                           len(data), None):
+        raise RuntimeError("WavPack configuration setup failed.")
+    if not wavpack.WavpackPackInit(wpc):
+        raise RuntimeError("wavpack: failed to initialize")
+    factor = 2**31
+    buffer = np.floor(data * factor).astype(np.int32, order="C")
+    buffer[data >= 1.0] = factor - 1
+    if not wavpack.WavpackPackSamples(wpc, buffer.ctypes.data, len(data)):
+        raise RuntimeError("wavpack: failed to compress and write samples")
+    wavpack.WavpackFlushSamples(wpc)
+    wavpack.WavpackCloseFile(wpc)
+    append_riff(filepath, metadata, locs, labels, rate, marker_hint)
+
+
 def formats_pydub():
     """Audio file formats supported by the Pydub module.
 

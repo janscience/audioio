@@ -270,7 +270,13 @@ and http://www.mega-nerd.com/libsndfile for details on the sndfile library."""
 audio_fileio.append('wavpack')
 try:
     import ctypes
-    wavpack = ctypes.CDLL('libwavpack.so.1')
+    if sys.platform.startswith('win'):
+        lib_name = 'wavpack.dll'
+    elif sys.platform.startswith('darwin'):
+        lib_name = 'libwavpack.dylib'
+    else:
+        lib_name = 'libwavpack.so' # or 'libwavpack.so.1'
+    wavpack = ctypes.CDLL(lib_name)
     wavpack.WavpackOpenFileInput.restype = ctypes.c_void_p
     wavpack.WavpackGetNumSamples64.restype = ctypes.c_int64
     wavpack.WavpackGetWrapperData.restype = ctypes.POINTER(ctypes.c_ubyte)
@@ -278,6 +284,49 @@ try:
     wavpack.WavpackUnpackSamples.argtypes = [ctypes.c_void_p,
                                              ctypes.POINTER(ctypes.c_int32),
                                              ctypes.c_uint32]
+    WavpackBlockOutput = ctypes.CFUNCTYPE(
+        ctypes.c_int,       # return type
+        ctypes.c_void_p,    # void *id (holds file descriptor/object reference)
+        ctypes.c_void_p,    # void *data (pointer to the block buffer)
+        ctypes.c_int32      # int32_t bcount (number of bytes to write)
+    )
+    class WavpackConfig(ctypes.Structure):
+        _fields_ = [('bitrate', ctypes.c_float),
+                    ('shaping_weight', ctypes.c_float),
+                    ('bits_per_sample', ctypes.c_int),
+                    ('bytes_per_sample', ctypes.c_int),
+                    ('qmode', ctypes.c_int),
+                    ('flags', ctypes.c_int),
+                    ('xmode', ctypes.c_int),
+                    ('num_channels', ctypes.c_int),
+                    ('float_norm_exp', ctypes.c_int),
+                    ('block_samples', ctypes.c_int32),
+                    ('worker_threads', ctypes.c_int32),
+                    ('sample_rate', ctypes.c_int32),
+                    ('channel_mask', ctypes.c_int32),
+                    ('md5_checksum', ctypes.c_char*16),
+                    ('md5_read', ctypes.c_char),
+                    ('num_tag_strings', ctypes.c_int),
+                    ('tag_strings', ctypes.c_char_p)]
+    wavpack.WavpackOpenFileOutput.restype = ctypes.c_void_p
+    wavpack.WavpackOpenFileOutput.argtypes = [WavpackBlockOutput,
+                                              ctypes.c_void_p,
+                                              ctypes.c_void_p]
+    wavpack.WavpackSetConfiguration64.restype = ctypes.c_int
+    wavpack.WavpackSetConfiguration64.argtypes = [ctypes.c_void_p,
+                                                  ctypes.POINTER(WavpackConfig),
+                                                  ctypes.c_int64,
+                                                  ctypes.c_char_p]
+    wavpack.WavpackPackInit.restype = ctypes.c_int
+    wavpack.WavpackPackInit.argtypes = [ctypes.c_void_p]
+    wavpack.WavpackPackSamples.restype = ctypes.c_int
+    wavpack.WavpackPackSamples.argtypes = [ctypes.c_void_p,
+                                           ctypes.c_void_p,
+                                           ctypes.c_uint32]
+    wavpack.WavpackFlushSamples.restype = ctypes.c_int
+    wavpack.WavpackFlushSamples.argtypes = [ctypes.c_void_p]
+    wavpack.WavpackCloseFile.restype = ctypes.c_void_p
+    wavpack.WavpackCloseFile.argtypes = [ctypes.c_void_p]
     audio_modules['wavpack'] = True
     audio_installed.append('wavpack')
 except (OSError, AttributeError):   # no library or too old
