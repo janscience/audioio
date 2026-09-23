@@ -275,7 +275,7 @@ try:
     elif sys.platform.startswith('darwin'):
         lib_name = 'libwavpack.dylib'
     else:
-        lib_name = 'libwavpack.so' # or 'libwavpack.so.1'
+        lib_name = 'libwavpack.so.1'
     wavpack = ctypes.CDLL(lib_name)
     wavpack.WavpackOpenFileInput.restype = ctypes.c_void_p
     wavpack.WavpackGetNumSamples64.restype = ctypes.c_int64
