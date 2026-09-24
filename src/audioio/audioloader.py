@@ -36,6 +36,7 @@ from .bufferedarray import BufferedArray
 from .riffmetadata import metadata_riff, markers_riff
 from .audiometadata import update_gain, add_unwrap, get_datetime
 from .audiometadata import flatten_metadata, add_metadata, set_starttime
+from .audiometadata import load_metadata
 from .audiotools import unwrap
 
 
@@ -573,13 +574,27 @@ def metadata(filepath, store_empty=False):
     ```
 
     """
+    md = {}
     try:
-        return metadata_riff(filepath, store_empty)
+        md = metadata_riff(filepath, store_empty)
     except ValueError: # not a RIFF file, but maybe a WavPack file
         sf = riff_wavpack(filepath)
-        if sf is None:
-            return {}
-        return metadata_riff(sf, store_empty)
+        if not sf is None:
+            md = metadata_riff(sf, store_empty)
+    if not hasattr(filepath, 'readline'):
+        filepath = Path(filepath)
+        count = 0
+        for ext in ['yml', 'txt', 'dat']:
+            for mf in filepath.parent.glob(filepath.stem + '*meta*.' + ext):
+                fmd = {}
+                fmd['Metadata file'] = mf.name
+                fmd.update(**load_metadata(mf))
+                if count == 0:
+                    md['Metadata'] = fmd
+                else:
+                    md[f'Metadata{count}'] = fmd
+                count += 1
+    return md
 
 
 def markers(filepath):
