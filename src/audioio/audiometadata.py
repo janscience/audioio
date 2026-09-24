@@ -64,10 +64,11 @@ md_orig = deepcopy(md)
 
 ### Output
 
-Write nested dictionaries as texts:
+Write and load nested dictionaries as texts:
 
 - `write_metadata_text()`: write meta data into a text/yaml file.
 - `print_metadata()`: write meta data to standard output.
+- `load_metadata()`: load meta data from a text/yaml file.
 
 ### Flatten
 
@@ -192,6 +193,7 @@ import argparse
 import numpy as np
 import datetime as dt
 
+from pathlib import Path
 from .version import __version__, __year__
 
 
@@ -217,9 +219,9 @@ def write_metadata_text(fh, meta, prefix='', indent=4, replace=None):
     Examples
     --------
     ```
-    from audioio import write_metadata
-    md = dict(aaaa=2, bbbb=dict(ccc=3, ddd=4, eee=dict(hh=5)))
-    write_metadata('info.txt', md)
+    >>> from audioio import write_metadata_text
+    >>> md = dict(aaaa=2, bbbb=dict(ccc=3, ddd=4, eee=dict(hh=5)))
+    >>> write_metadata_text('info.txt', md)
     ```
     """
     
@@ -291,6 +293,98 @@ def print_metadata(meta, prefix='', indent=4, replace=None):
     ```
     """
     write_metadata_text(sys.stdout, meta, prefix, indent, replace)
+
+    
+def load_metadata(fh, prefix=''):
+    """Load meta data from a text/yaml file or stream.
+
+    Parameters
+    ----------
+    fh: filename or stream
+        If not a stream, the file with name `fh` is opened.
+        Otherwise `fh` is used as a stream from which the metadata are read in.
+    prefix: str
+        This string is removed from the beginning of each line before parsing.
+
+    Returns
+    -------
+    meta: nested dict
+        Key-value pairs of metadata loaded from the file.
+
+    Examples
+    --------
+    ```
+    >>> from audioio import load_metadata, write_metadata_text, print_metadata
+    >>> md = dict(aaaa=2, bbbb=dict(ccc=3, ddd=4, eee=dict(hh=5)))
+    >>> write_metadata_text('info.txt', md)
+    >>> md = load_metadata('info.txt')
+    >>> print_metadata(md)
+    aaaa: 2
+    bbbb:
+        ccc: 3
+        ddd: 4
+        eee:
+            hh: 5
+    iiii:
+        jjj: 6
+    ```
+    """
+    # read metadata from file:
+    own_file = False
+    if not hasattr(fh, 'readline'):
+        fh = open(Path(fh), 'r')
+        own_file = True
+    lines = []
+    for line in fh:
+        if prefix:
+            line = line.lstrip(prefix)
+        line = line.rstrip()
+        if len(line) > 0:
+            lines.append(line)
+    if own_file:
+        fh.close()
+    # parse:
+    data = {}
+    cdatas = [data]
+    sections = ['']
+    ident_offs = None
+    ident = None
+    for line in lines:
+        words = line.split(':')
+        value = ':'.join(words[1:]).strip() if len(words) > 1 else ''
+        if len(words) == 0:
+            continue
+        key = words[0]
+        # get section level:
+        level = 0
+        if len(value) == 0:
+            nident = len(key) - len(key.lstrip())
+            if ident_offs is None:
+                ident_offs = nident
+            elif ident is None:
+                if nident > ident_offs:
+                    ident = nident - ident_offs
+                    level = 1
+            else:
+                level = (nident - ident_offs)//ident
+            # close sections:
+            while len(cdatas) > level + 1:
+                cdatas[-1][sections.pop()] = cdatas.pop()
+        # key:
+        key = key.strip().strip('"')
+        if len(value) == 0:
+            # new sub-section:
+            cdatas.append({})
+            sections.append(key)
+        else:
+            # key-value pair:
+            value = value.strip('"')
+            if len(value) > 0 and value[0] == '[' and value[-1] == ']':
+                value = [v.strip() for v in value.lstrip('[').rstrip(']').split(',')]
+            cdatas[-1][key] = value
+    while len(cdatas) > 1 and len(sections) > 0:
+        cdatas[-1][sections.pop()] = cdatas.pop()
+    return data
 
 
 def flatten_metadata(md, keep_sections=False, sep='.'):
