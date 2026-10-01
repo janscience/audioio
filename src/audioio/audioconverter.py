@@ -176,7 +176,7 @@ def parse_channels(cstr):
     return channels
 
 
-def parse_load_kwargs(load_strs):
+def parse_load_kwargs(load_strs, sep='auto'):
     """Parse additional arguments for loading data.
 
     Parameters
@@ -184,6 +184,10 @@ def parse_load_kwargs(load_strs):
     load_strs: list of str
         Strings with comma separated key-value pairs as returned
         by args.load_kwargs from `add_arguments()`.
+    sep: str
+        String that separates keys and values.
+        If 'auto' then take either ':' or '=' depending on which one
+        occurs more often and earlier in load_strs.
 
     Returns
     -------
@@ -192,13 +196,32 @@ def parse_load_kwargs(load_strs):
         Value strings containing integer or floating point numbers
         are converted to `int` and `float`, respectively.
     """
+    # find separator:
+    if sep.lower() == 'auto' or len(sep) == 0:
+        sep_c = 0
+        sep_e = 0
+        for s in load_strs:
+            for kw in s.split(','):
+                i_c = kw.find(':')
+                i_e = kw.find('=')
+                if i_c >= 0 or i_e >= 0:
+                    if i_c < 0:
+                        i_c = len(kw)
+                    if i_e < 0:
+                        i_e = len(kw)
+                    if i_c < i_e:
+                        sep_c += 1
+                    if i_e < i_c:
+                        sep_e += 1
+        sep = ':' if sep_c > sep_e else '='
+    # parse strings:
     load_kwargs = {}
     for s in load_strs:
         for kw in s.split(','):
-            kws = kw.split(':')
-            if len(kws) == 2:
+            kws = kw.split(sep)
+            if len(kws) >= 2:
                 key = kws[0].strip()
-                value = kws[1].strip()
+                value = sep.join(kws[1:]).strip()
                 try:
                     val = int(value)
                 except ValueError:
